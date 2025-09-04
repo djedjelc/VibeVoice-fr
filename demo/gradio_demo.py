@@ -211,14 +211,14 @@ class VibeVoiceDemo:
                     raise gr.Error(f"Error: Please select a valid speaker for Speaker {i+1}.")
             
             # Build initial log
-            log = f"🎙️ Generating podcast with {num_speakers} speakers\n"
-            log += f"📊 Parameters: CFG Scale={cfg_scale}, Inference Steps={self.inference_steps}\n"
-            log += f"🎭 Speakers: {', '.join(selected_speakers)}\n"
+            log = f"🎙️ Génération de podcast avec {num_speakers} interlocuteurs\n"
+            log += f"📊 Paramètres: CFG Scale={cfg_scale}, Inference Steps={self.inference_steps}\n"
+            log += f"🎭 Interlocuteurs: {', '.join(selected_speakers)}\n"
             
             # Check for stop signal
             if self.stop_generation:
                 self.is_generating = False
-                yield None, "🛑 Generation stopped by user", gr.update(visible=False)
+                yield None, "🛑 Génération arrêtée par l'utilisateur", gr.update(visible=False)
                 return
             
             # Load voice samples
@@ -236,7 +236,7 @@ class VibeVoiceDemo:
             # Check for stop signal
             if self.stop_generation:
                 self.is_generating = False
-                yield None, "🛑 Generation stopped by user", gr.update(visible=False)
+                yield None, "🛑 Génération arrêtée par l'utilisateur", gr.update(visible=False)
                 return
             
             # Parse script to assign speaker ID's
@@ -257,13 +257,13 @@ class VibeVoiceDemo:
                     formatted_script_lines.append(f"Speaker {speaker_id}: {line}")
             
             formatted_script = '\n'.join(formatted_script_lines)
-            log += f"📝 Formatted script with {len(formatted_script_lines)} turns\n\n"
-            log += "🔄 Processing with VibeVoice (streaming mode)...\n"
+            log += f"📝 Script formaté avec {len(formatted_script_lines)} tours\n\n"
+            log += "🔄 Traitement avec VibeVoice (mode streaming)...\n"
             
             # Check for stop signal before processing
             if self.stop_generation:
                 self.is_generating = False
-                yield None, "🛑 Generation stopped by user", gr.update(visible=False)
+                yield None, "🛑 Génération arrêtée par l'utilisateur", gr.update(visible=False)
                 return
             
             start_time = time.time()
@@ -306,7 +306,7 @@ class VibeVoiceDemo:
                 audio_streamer.end()
                 generation_thread.join(timeout=5.0)  # Wait up to 5 seconds for thread to finish
                 self.is_generating = False
-                yield None, "🛑 Generation stopped by user", gr.update(visible=False)
+                yield None, "🛑 Génération arrêtée par l'utilisateur", gr.update(visible=False)
                 return
 
             # Collect audio chunks as they arrive
@@ -376,7 +376,7 @@ class VibeVoiceDemo:
                     new_duration = len(new_audio) / sample_rate
                     total_duration = sum(len(chunk) for chunk in all_audio_chunks) / sample_rate
                     
-                    log_update = log + f"🎵 Streaming: {total_duration:.1f}s generated (chunk {chunk_count})\n"
+                    log_update = log + f"🎵 Diffusion: {total_duration:.1f}s généré (chunk {chunk_count})\n"
                     
                     # Yield streaming audio chunk and keep complete_audio as None during streaming
                     yield (sample_rate, new_audio), None, log_update, gr.update(visible=True)
@@ -389,7 +389,7 @@ class VibeVoiceDemo:
             if pending_chunks:
                 final_new_audio = np.concatenate(pending_chunks)
                 total_duration = sum(len(chunk) for chunk in all_audio_chunks) / sample_rate
-                log_update = log + f"🎵 Streaming final chunk: {total_duration:.1f}s total\n"
+                log_update = log + f"🎵 Diffusion dernière chunk: {total_duration:.1f}s total\n"
                 yield (sample_rate, final_new_audio), None, log_update, gr.update(visible=True)
                 has_yielded_audio = True  # Mark that we yielded audio
             
@@ -410,7 +410,7 @@ class VibeVoiceDemo:
             
             # Check if stopped by user
             if self.stop_generation:
-                yield None, None, "🛑 Generation stopped by user", gr.update(visible=False)
+                yield None, None, "🛑 Génération arrêtée par l'utilisateur", gr.update(visible=False)
                 return
             
             # Debug logging
@@ -422,23 +422,23 @@ class VibeVoiceDemo:
                 complete_audio = np.concatenate(all_audio_chunks)
                 final_duration = len(complete_audio) / sample_rate
                 
-                final_log = log + f"⏱️ Generation completed in {generation_time:.2f} seconds\n"
-                final_log += f"🎵 Final audio duration: {final_duration:.2f} seconds\n"
-                final_log += f"📊 Total chunks: {chunk_count}\n"
-                final_log += "✨ Generation successful! Complete audio is ready.\n"
-                final_log += "💡 Not satisfied? You can regenerate or adjust the CFG scale for different results."
+                final_log = log + f"⏱️ Génération terminée en {generation_time:.2f} secondes\n"
+                final_log += f"🎵 Durée audio finale: {final_duration:.2f} secondes\n"
+                final_log += f"📊 Nombre de chunks: {chunk_count}\n"
+                final_log += "✨ Génération réussie! L'audio complet est prêt.\n"
+                final_log += "💡 Insatisfait? Vous pouvez régénérer ou ajuster l'échelle CFG pour des résultats différents."
                 
                 # Yield the complete audio
                 yield None, (sample_rate, complete_audio), final_log, gr.update(visible=False)
                 return
             
             if not has_received_chunks:
-                error_log = log + f"\n❌ Error: No audio chunks were received from the model. Generation time: {generation_time:.2f}s"
+                error_log = log + f"\n❌ Erreur: Aucun chunk audio n'a été reçu du modèle. Temps de génération: {generation_time:.2f}s"
                 yield None, None, error_log, gr.update(visible=False)
                 return
             
             if not has_yielded_audio:
-                error_log = log + f"\n❌ Error: Audio was generated but not streamed. Chunk count: {chunk_count}"
+                error_log = log + f"\n❌ Erreur: L'audio a été généré mais n'a pas été diffusé. Nombre de chunks: {chunk_count}"
                 yield None, None, error_log, gr.update(visible=False)
                 return
 
@@ -447,30 +447,30 @@ class VibeVoiceDemo:
                 complete_audio = np.concatenate(all_audio_chunks)
                 final_duration = len(complete_audio) / sample_rate
                 
-                final_log = log + f"⏱️ Generation completed in {generation_time:.2f} seconds\n"
-                final_log += f"🎵 Final audio duration: {final_duration:.2f} seconds\n"
-                final_log += f"📊 Total chunks: {chunk_count}\n"
-                final_log += "✨ Generation successful! Complete audio is ready in the 'Complete Audio' tab.\n"
-                final_log += "💡 Not satisfied? You can regenerate or adjust the CFG scale for different results."
+                final_log = log + f"⏱️ Génération terminée en {generation_time:.2f} secondes\n"
+                final_log += f"🎵 Durée audio finale: {final_duration:.2f} secondes\n"
+                final_log += f"📊 Nombre de chunks: {chunk_count}\n"
+                final_log += "✨ Génération réussie! L'audio complet est prêt dans l'onglet 'Audio complet'.\n"
+                final_log += "💡 Insatisfait? Vous pouvez régénérer ou ajuster l'échelle CFG pour des résultats différents."
                 
                 # Final yield: Clear streaming audio and provide complete audio
                 yield None, (sample_rate, complete_audio), final_log, gr.update(visible=False)
             else:
-                final_log = log + "❌ No audio was generated."
+                final_log = log + "❌ Aucun audio n'a été généré."
                 yield None, None, final_log, gr.update(visible=False)
 
         except gr.Error as e:
             # Handle Gradio-specific errors (like input validation)
             self.is_generating = False
             self.current_streamer = None
-            error_msg = f"❌ Input Error: {str(e)}"
+            error_msg = f"❌ Erreur d'entrée: {str(e)}"
             print(error_msg)
             yield None, None, error_msg, gr.update(visible=False)
             
         except Exception as e:
             self.is_generating = False
             self.current_streamer = None
-            error_msg = f"❌ An unexpected error occurred: {str(e)}"
+            error_msg = f"❌ Une erreur inattendue est survenue: {str(e)}"
             print(error_msg)
             import traceback
             traceback.print_exc()
@@ -814,14 +814,14 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
         gr.HTML("""
         <div class="main-header">
             <h1>🎙️ Vibe Podcasting </h1>
-            <p>Generating Long-form Multi-speaker AI Podcast with VibeVoice</p>
+            <p>Génération de podcasts IA multi-interlocuteurs longue durée avec VibeVoice</p>
         </div>
         """)
         
         with gr.Row():
             # Left column - Settings
             with gr.Column(scale=1, elem_classes="settings-card"):
-                gr.Markdown("### 🎛️ **Podcast Settings**")
+                gr.Markdown("### 🎛️ **Paramètres du podcast**")
                 
                 # Number of speakers
                 num_speakers = gr.Slider(
@@ -829,12 +829,12 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
                     maximum=4,
                     value=2,
                     step=1,
-                    label="Number of Speakers",
+                    label="Nombre d'interlocuteurs",
                     elem_classes="slider-container"
                 )
                 
                 # Speaker selection
-                gr.Markdown("### 🎭 **Speaker Selection**")
+                gr.Markdown("### 🎭 **Sélection des locuteurs**")
                 
                 available_speaker_names = list(demo_instance.available_voices.keys())
                 # Pick up to 4 default speakers from the available list (fallback to empty list if none)
@@ -848,39 +848,39 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
                     speaker = gr.Dropdown(
                         choices=available_speaker_names,
                         value=default_value,
-                        label=f"Speaker {i+1}",
+                        label=f"Interlocuteur {i+1}",
                         visible=(i < 2),  # Initially show only first 2 speakers
                         elem_classes="speaker-item"
                     )
                     speaker_selections.append(speaker)
                 
                 # Advanced settings
-                gr.Markdown("### ⚙️ **Advanced Settings**")
+                gr.Markdown("### ⚙️ **Paramètres avancés**")
                 
                 # Sampling parameters (contains all generation settings)
-                with gr.Accordion("Generation Parameters", open=False):
+                with gr.Accordion("Paramètres de génération", open=False):
                     cfg_scale = gr.Slider(
                         minimum=1.0,
                         maximum=2.0,
                         value=1.3,
                         step=0.05,
-                        label="CFG Scale (Guidance Strength)",
+                        label="Échelle CFG (intensité du guidage)",
                         # info="Higher values increase adherence to text",
                         elem_classes="slider-container"
                     )
                 
             # Right column - Generation
             with gr.Column(scale=2, elem_classes="generation-card"):
-                gr.Markdown("### 📝 **Script Input**")
+                gr.Markdown("### 📝 **Script d'entrée**")
                 
                 script_input = gr.Textbox(
-                    label="Conversation Script",
-                    placeholder="""Enter your podcast script here. You can format it as:
+                    label="Script de conversation",
+                    placeholder="""Collez votre script ici. Format possible :
 
-Speaker 1: Welcome to our podcast today!
-Speaker 2: Thanks for having me. I'm excited to discuss...
+Speaker 1: Bienvenue dans notre podcast aujourd'hui !
+Speaker 2: Merci de m'avoir invité. Je suis ravi de discuter...
 
-Or paste text directly and it will auto-assign speakers.""",
+Ou collez simplement votre texte : les locuteurs seront affectés automatiquement.""",
                     lines=12,
                     max_lines=20,
                     elem_classes="script-input"
@@ -890,7 +890,7 @@ Or paste text directly and it will auto-assign speakers.""",
                 with gr.Row():
                     # Random example button (now on the left)
                     random_example_btn = gr.Button(
-                        "🎲 Random Example",
+                        "🎲 Exemple aléatoire",
                         size="lg",
                         variant="secondary",
                         elem_classes="random-btn",
@@ -899,7 +899,7 @@ Or paste text directly and it will auto-assign speakers.""",
                     
                     # Generate button (now on the right)
                     generate_btn = gr.Button(
-                        "🚀 Generate Podcast",
+                        "🚀 Générer le podcast",
                         size="lg",
                         variant="primary",
                         elem_classes="generate-btn",
@@ -908,7 +908,7 @@ Or paste text directly and it will auto-assign speakers.""",
                 
                 # Stop button
                 stop_btn = gr.Button(
-                    "🛑 Stop Generation",
+                    "🛑 Arrêter la génération",
                     size="lg",
                     variant="stop",
                     elem_classes="stop-btn",
@@ -927,7 +927,7 @@ Or paste text directly and it will auto-assign speakers.""",
                                 font-size: 0.9rem;
                                 color: #166534;">
                         <span class="streaming-indicator"></span>
-                        <strong>LIVE STREAMING</strong> - Audio is being generated in real-time
+                        <strong>DIFFUSION EN DIRECT</strong> - L'audio est généré en temps réel
                     </div>
                     """,
                     visible=False,
@@ -935,11 +935,11 @@ Or paste text directly and it will auto-assign speakers.""",
                 )
                 
                 # Output section
-                gr.Markdown("### 🎵 **Generated Podcast**")
+                gr.Markdown("### 🎵 **Podcast généré**")
                 
                 # Streaming audio output (outside of tabs for simpler handling)
                 audio_output = gr.Audio(
-                    label="Streaming Audio (Real-time)",
+                    label="Audio en streaming (temps réel)",
                     type="numpy",
                     elem_classes="audio-output",
                     streaming=True,  # Enable streaming mode
@@ -950,7 +950,7 @@ Or paste text directly and it will auto-assign speakers.""",
                 
                 # Complete audio output (non-streaming)
                 complete_audio_output = gr.Audio(
-                    label="Complete Podcast (Download after generation)",
+                    label="Podcast complet (télécharger après génération)",
                     type="numpy",
                     elem_classes="audio-output complete-audio-section",
                     streaming=False,  # Non-streaming mode
@@ -960,13 +960,13 @@ Or paste text directly and it will auto-assign speakers.""",
                 )
                 
                 gr.Markdown("""
-                *💡 **Streaming**: Audio plays as it's being generated (may have slight pauses)  
-                *💡 **Complete Audio**: Will appear below after generation finishes*
+                *💡 **Streaming** : l'audio est lu pendant la génération (il peut y avoir de légères pauses)  
+                *💡 **Audio complet** : apparaîtra ci-dessous une fois la génération terminée*
                 """)
                 
                 # Generation log
                 log_output = gr.Textbox(
-                    label="Generation Log",
+                    label="Journal de génération",
                     lines=8,
                     max_lines=15,
                     interactive=False,
@@ -994,10 +994,10 @@ Or paste text directly and it will auto-assign speakers.""",
                 cfg_scale = speakers_and_params[4]   # CFG scale
                 
                 # Clear outputs and reset visibility at start
-                yield None, gr.update(value=None, visible=False), "🎙️ Starting generation...", gr.update(visible=True), gr.update(visible=False), gr.update(visible=True)
+                yield None, gr.update(value=None, visible=False), "🎙️ Démarrage de la génération...", gr.update(visible=True), gr.update(visible=False), gr.update(visible=True)
                 
                 # The generator will yield multiple times
-                final_log = "Starting generation..."
+                final_log = "Démarrage de la génération..."
                 
                 for streaming_audio, complete_audio, log, streaming_visible in demo_instance.generate_podcast_streaming(
                     num_speakers=int(num_speakers),
@@ -1023,7 +1023,7 @@ Or paste text directly and it will auto-assign speakers.""",
                             yield None, gr.update(visible=False), log, streaming_visible, gr.update(visible=False), gr.update(visible=True)
 
             except Exception as e:
-                error_msg = f"❌ A critical error occurred in the wrapper: {str(e)}"
+                error_msg = f"❌ Une erreur critique est survenue dans le wrapper: {str(e)}"
                 print(error_msg)
                 import traceback
                 traceback.print_exc()
@@ -1034,7 +1034,7 @@ Or paste text directly and it will auto-assign speakers.""",
             """Handle stopping generation."""
             demo_instance.stop_audio_generation()
             # Return values for: log_output, streaming_status, generate_btn, stop_btn
-            return "🛑 Generation stopped.", gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
+            return "🛑 Génération arrêtée.", gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
         
         # Add a clear audio function
         def clear_audio_outputs():
@@ -1109,17 +1109,17 @@ Or paste text directly and it will auto-assign speakers.""",
         
         # Add usage tips
         gr.Markdown("""
-        ### 💡 **Usage Tips**
+        ### 💡 **Conseils d'utilisation**
         
-        - Click **🚀 Generate Podcast** to start audio generation
-        - **Live Streaming** tab shows audio as it's generated (may have slight pauses)
-        - **Complete Audio** tab provides the full, uninterrupted podcast after generation
-        - During generation, you can click **🛑 Stop Generation** to interrupt the process
-        - The streaming indicator shows real-time generation progress
+        - Cliquez sur **🚀 Générer le podcast** pour lancer la génération
+        - L'onglet **Streaming en direct** diffuse l'audio pendant la génération (de légères pauses sont possibles)
+        - L'onglet **Audio complet** fournit le podcast intégral après la génération
+        - Pendant la génération, vous pouvez cliquer sur **🛑 Arrêter la génération** pour interrompre le processus
+        - L'indicateur de diffusion montre la progression en temps réel
         """)
         
         # Add example scripts
-        gr.Markdown("### 📚 **Example Scripts**")
+        gr.Markdown("### 📚 **Exemples de scripts**")
         
         # Use dynamically loaded examples if available, otherwise provide a default
         if hasattr(demo_instance, 'example_scripts') and demo_instance.example_scripts:
@@ -1133,7 +1133,7 @@ Or paste text directly and it will auto-assign speakers.""",
         gr.Examples(
             examples=example_scripts,
             inputs=[num_speakers, script_input],
-            label="Try these example scripts:"
+            label="Essayez ces scripts d'exemple :"
         )
 
         # --- Risks & limitations (footer) ---
