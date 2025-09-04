@@ -837,12 +837,14 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
                 gr.Markdown("### 🎭 **Speaker Selection**")
                 
                 available_speaker_names = list(demo_instance.available_voices.keys())
-                # default_speakers = available_speaker_names[:4] if len(available_speaker_names) >= 4 else available_speaker_names
-                default_speakers = ['en-Alice_woman', 'en-Carter_man', 'en-Frank_man', 'en-Maya_woman']
+                # Pick up to 4 default speakers from the available list (fallback to empty list if none)
+                default_speakers = available_speaker_names[:4]
 
                 speaker_selections = []
                 for i in range(4):
-                    default_value = default_speakers[i] if i < len(default_speakers) else None
+                    default_candidate = default_speakers[i] if i < len(default_speakers) else None
+                    # Ensure the default value exists in the current choices; otherwise, set to None
+                    default_value = default_candidate if default_candidate in available_speaker_names else None
                     speaker = gr.Dropdown(
                         choices=available_speaker_names,
                         value=default_value,
