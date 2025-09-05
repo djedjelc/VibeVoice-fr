@@ -219,7 +219,16 @@ class VibeVoiceDemo:
             # Build initial log
             log = f"🎙️ Génération de podcast avec {num_speakers} interlocuteurs\n"
             log += f"📊 Paramètres: CFG Scale={cfg_scale}, Inference Steps={self.inference_steps}\n"
-            log += f"🎭 Interlocuteurs: {', '.join(selected_speakers)}\n"
+            
+            # Format speaker names for log
+            speaker_names = []
+            for speaker_item in selected_speakers:
+                if isinstance(speaker_item, tuple):
+                    speaker_names.append("Audio personnalisé")
+                else:
+                    speaker_names.append(speaker_item)
+            
+            log += f"🎭 Interlocuteurs: {', '.join(speaker_names)}\n"
             
             # Check for stop signal
             if self.stop_generation:
