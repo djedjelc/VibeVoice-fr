@@ -870,7 +870,7 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
 
                     upload = gr.Audio(
                         sources=["upload"],
-                        type="numpy",
+                        type="filepath",
                         label=f"Audio personnalisé {i+1}",
                         visible=False,
                         elem_classes="speaker-item"
@@ -1038,7 +1038,16 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
                     if dd_val == UPLOAD_OPTION:
                         if upload_val is None:
                             raise gr.Error("Veuillez uploader un échantillon audio pour la voix personnalisée.")
-                        speakers_list.append(("custom", upload_val))
+                        # Read wav/mp3 to numpy with librosa
+                        try:
+                            wav, sr = sf.read(upload_val)
+                            if len(wav.shape) > 1:
+                                wav = np.mean(wav, axis=1)
+                            if sr != 24000:
+                                wav = librosa.resample(wav, orig_sr=sr, target_sr=24000)
+                        except Exception as e:
+                            raise gr.Error(f"Impossible de lire l'audio importé : {e}")
+                        speakers_list.append(("custom", wav))
                     else:
                         speakers_list.append(dd_val)
 
@@ -1073,7 +1082,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
         # Add a clear audio function
         def clear_audio_outputs():
             """Clear both audio outputs before starting new generation."""
-            return None, gr.update(value=None, visible=False)
+            return None, gr.update(value=None)
 
         # Connect generation button with streaming outputs
         generate_btn.click(
