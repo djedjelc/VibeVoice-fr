@@ -206,9 +206,15 @@ class VibeVoiceDemo:
             
             # Validate speaker selections
             for i, speaker in enumerate(selected_speakers):
-                if not speaker or speaker not in self.available_voices:
-                    self.is_generating = False
-                    raise gr.Error(f"Error: Please select a valid speaker for Speaker {i+1}.")
+                if isinstance(speaker, tuple):
+                    # Expecting ("custom", np.ndarray)
+                    if speaker[0] != "custom" or not isinstance(speaker[1], np.ndarray):
+                        self.is_generating = False
+                        raise gr.Error(f"Error: Speaker {i+1} audio invalide.")
+                else:
+                    if not speaker or speaker not in self.available_voices:
+                        self.is_generating = False
+                        raise gr.Error(f"Error: Please select a valid speaker for Speaker {i+1}.")
             
             # Build initial log
             log = f"🎙️ Génération de podcast avec {num_speakers} interlocuteurs\n"
@@ -223,12 +229,19 @@ class VibeVoiceDemo:
             
             # Load voice samples
             voice_samples = []
-            for speaker_name in selected_speakers:
-                audio_path = self.available_voices[speaker_name]
-                audio_data = self.read_audio(audio_path)
-                if len(audio_data) == 0:
-                    self.is_generating = False
-                    raise gr.Error(f"Error: Failed to load audio for {speaker_name}")
+            for speaker_item in selected_speakers:
+                if isinstance(speaker_item, tuple):
+                    # Custom audio passed directly as numpy array
+                    audio_data = speaker_item[1]
+                    if len(audio_data) == 0:
+                        self.is_generating = False
+                        raise gr.Error("Error: Custom audio sample is empty")
+                else:
+                    audio_path = self.available_voices[speaker_item]
+                    audio_data = self.read_audio(audio_path)
+                    if len(audio_data) == 0:
+                        self.is_generating = False
+                        raise gr.Error(f"Error: Failed to load audio for {speaker_item}")
                 voice_samples.append(audio_data)
             
             # log += f"✅ Loaded {len(voice_samples)} voice samples\n"
@@ -837,22 +850,44 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
                 gr.Markdown("### 🎭 **Sélection des locuteurs**")
                 
                 available_speaker_names = list(demo_instance.available_voices.keys())
-                # Pick up to 4 default speakers from the available list (fallback to empty list if none)
-                default_speakers = available_speaker_names[:4]
+                UPLOAD_OPTION = "🔊 Audio personnalisé"
+                choices_with_upload = [UPLOAD_OPTION] + available_speaker_names
 
-                speaker_selections = []
+                speaker_dropdowns = []
+                speaker_uploads = []
                 for i in range(4):
-                    default_candidate = default_speakers[i] if i < len(default_speakers) else None
-                    # Ensure the default value exists in the current choices; otherwise, set to None
+                    default_candidate = available_speaker_names[i] if i < len(available_speaker_names) else None
                     default_value = default_candidate if default_candidate in available_speaker_names else None
-                    speaker = gr.Dropdown(
-                        choices=available_speaker_names,
+
+                    dropdown = gr.Dropdown(
+                        choices=choices_with_upload,
                         value=default_value,
-                        label=f"Interlocuteur {i+1}",
-                        visible=(i < 2),  # Initially show only first 2 speakers
+                        label=f"Interlocuteur {i+1} (voix)",
+                        visible=(i < 2),
                         elem_classes="speaker-item"
                     )
-                    speaker_selections.append(speaker)
+                    speaker_dropdowns.append(dropdown)
+
+                    upload = gr.Audio(
+                        source="upload",
+                        type="numpy",
+                        label=f"Audio personnalisé {i+1}",
+                        visible=False,
+                        elem_classes="speaker-item"
+                    )
+                    speaker_uploads.append(upload)
+
+                # function to toggle audio upload visibility when dropdown changes
+                def _toggle_upload(choice):
+                    return gr.update(visible=(choice == UPLOAD_OPTION))
+
+                for idx, dd in enumerate(speaker_dropdowns):
+                    dd.change(
+                        fn=_toggle_upload,
+                        inputs=[dd],
+                        outputs=[speaker_uploads[idx]],
+                        queue=False
+                    )
                 
                 # Advanced settings
                 gr.Markdown("### ⚙️ **Paramètres avancés**")
@@ -974,60 +1009,59 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
                 )
         
         def update_speaker_visibility(num_speakers):
-            updates = []
+            dropdown_updates = []
+            upload_updates = []
             for i in range(4):
-                updates.append(gr.update(visible=(i < num_speakers)))
-            return updates
-        
+                dropdown_updates.append(gr.update(visible=(i < num_speakers)))
+                upload_updates.append(gr.update(visible=False))  # hide uploads initially, they toggle separately
+            return dropdown_updates + upload_updates
+
         num_speakers.change(
             fn=update_speaker_visibility,
             inputs=[num_speakers],
-            outputs=speaker_selections
+            outputs=speaker_dropdowns + speaker_uploads
         )
+        # --- New: Speaker preset dropdowns and audio upload components are managed together ---
         
         # Main generation function with streaming
-        def generate_podcast_wrapper(num_speakers, script, *speakers_and_params):
-            """Wrapper function to handle the streaming generation call."""
+        def generate_podcast_wrapper(num_speakers, script, *speaker_args):
+            """Wrapper that supports preset voices or custom audio"""
             try:
-                # Extract speakers and parameters
-                speakers = speakers_and_params[:4]  # First 4 are speaker selections
-                cfg_scale = speakers_and_params[4]   # CFG scale
-                
-                # Clear outputs and reset visibility at start
+                # speaker_args contains 4 dropdown values + 4 uploads + cfg_scale at the end
+                dropdown_values = speaker_args[:4]
+                upload_values = speaker_args[4:8]
+                cfg_scale = speaker_args[8]
+
+                # Prepare speaker list (string name or tuple ('custom', audio_np))
+                speakers_list = []
+                for dd_val, upload_val in zip(dropdown_values, upload_values):
+                    if dd_val == UPLOAD_OPTION:
+                        if upload_val is None:
+                            raise gr.Error("Veuillez uploader un échantillon audio pour la voix personnalisée.")
+                        speakers_list.append(("custom", upload_val))
+                    else:
+                        speakers_list.append(dd_val)
+
+                # Clear outputs at start
                 yield None, gr.update(value=None, visible=False), "🎙️ Démarrage de la génération...", gr.update(visible=True), gr.update(visible=False), gr.update(visible=True)
-                
-                # The generator will yield multiple times
-                final_log = "Démarrage de la génération..."
-                
+
                 for streaming_audio, complete_audio, log, streaming_visible in demo_instance.generate_podcast_streaming(
                     num_speakers=int(num_speakers),
                     script=script,
-                    speaker_1=speakers[0],
-                    speaker_2=speakers[1],
-                    speaker_3=speakers[2],
-                    speaker_4=speakers[3],
+                    speaker_1=speakers_list[0] if len(speakers_list) > 0 else None,
+                    speaker_2=speakers_list[1] if len(speakers_list) > 1 else None,
+                    speaker_3=speakers_list[2] if len(speakers_list) > 2 else None,
+                    speaker_4=speakers_list[3] if len(speakers_list) > 3 else None,
                     cfg_scale=cfg_scale
                 ):
-                    final_log = log
-                    
-                    # Check if we have complete audio (final yield)
                     if complete_audio is not None:
-                        # Final state: clear streaming, show complete audio
                         yield None, gr.update(value=complete_audio, visible=True), log, gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
                     else:
-                        # Streaming state: update streaming audio only
-                        if streaming_audio is not None:
-                            yield streaming_audio, gr.update(visible=False), log, streaming_visible, gr.update(visible=False), gr.update(visible=True)
-                        else:
-                            # No new audio, just update status
-                            yield None, gr.update(visible=False), log, streaming_visible, gr.update(visible=False), gr.update(visible=True)
+                        yield streaming_audio, gr.update(visible=False), log, streaming_visible, gr.update(visible=False), gr.update(visible=True)
 
             except Exception as e:
-                error_msg = f"❌ Une erreur critique est survenue dans le wrapper: {str(e)}"
+                error_msg = f"❌ Une erreur est survenue: {str(e)}"
                 print(error_msg)
-                import traceback
-                traceback.print_exc()
-                # Reset button states on error
                 yield None, gr.update(value=None, visible=False), error_msg, gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
         
         def stop_generation_handler():
@@ -1054,7 +1088,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
             queue=False
         ).then(
             fn=generate_podcast_wrapper,
-            inputs=[num_speakers, script_input] + speaker_selections + [cfg_scale],
+            inputs=[num_speakers, script_input] + speaker_dropdowns + speaker_uploads + [cfg_scale],
             outputs=[audio_output, complete_audio_output, log_output, streaming_status, generate_btn, stop_btn],
             queue=True  # Enable Gradio's built-in queue
         )
