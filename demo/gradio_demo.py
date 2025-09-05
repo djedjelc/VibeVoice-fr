@@ -869,7 +869,7 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
                     speaker_dropdowns.append(dropdown)
 
                     upload = gr.Audio(
-                        source="upload",
+                        sources=["upload"],
                         type="numpy",
                         label=f"Audio personnalisé {i+1}",
                         visible=False,
