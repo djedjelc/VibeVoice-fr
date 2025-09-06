@@ -212,8 +212,8 @@ class VibeVoiceDemo:
                         self.is_generating = False
                         raise gr.Error(f"Erreur: Audio de l'interlocuteur {i+1} invalide.")
                 else:
-                if not speaker or speaker not in self.available_voices:
-                    self.is_generating = False
+                    if not speaker or speaker not in self.available_voices:
+                        self.is_generating = False
                         raise gr.Error(f"Erreur: Veuillez sélectionner un interlocuteur valide pour l'interlocuteur {i+1}.")
             
             # Build initial log
