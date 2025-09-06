@@ -247,9 +247,9 @@ class VibeVoiceDemo:
                         raise gr.Error("Erreur: L'échantillon audio personnalisé est vide")
                 else:
                     audio_path = self.available_voices[speaker_item]
-                audio_data = self.read_audio(audio_path)
-                if len(audio_data) == 0:
-                    self.is_generating = False
+                    audio_data = self.read_audio(audio_path)
+                    if len(audio_data) == 0:
+                        self.is_generating = False
                         raise gr.Error(f"Erreur: Échec du chargement audio pour {speaker_item}")
                 voice_samples.append(audio_data)
             
