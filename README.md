@@ -32,13 +32,23 @@ Le modèle peut synthétiser jusqu'à **90 minutes** de parole avec jusqu'à **4
 
 
 - **Testez sur leur site : [Demo](https://v.vibevoice.info/) !**
-- **Je vous ai fait un [Colab](https://colab.research.google.com/github/microsoft/VibeVoice/blob/main/demo/VibeVoice_colab.ipynb) . Seul VibeVoice-1.5B est supporté.**
+- **Je vous ai fait un [Colab](https://colab.research.google.com/drive/1scbH5WOhmujRn_9_gtWLNw6BEu7v9UWv#scrollTo=h4SyUtXXqu7P) . Seul VibeVoice-1.5B est supporté.**
 
 ### 📋 TODO
 
 - [ ] Fusionner les modèles dans le référentiel officiel Hugging Face ([PR](https://github.com/huggingface/transformers/pull/40546)) 
 - [ ] Publier un exemple de code de training et la documentation
 - [ ] VibePod :  Solution de bout en bout qui crée des podcasts à partir de documents, de pages web ou même d'un simple sujet.
+
+### 📋 DEMO
+
+#### 🎬 Exemples vidéo
+
+**Histoire** 
+[![Exemple Histoire](https://img.youtube.com/vi/7Vp5lw7EtJM/0.jpg)](https://youtu.be/7Vp5lw7EtJM)
+
+**Podcast** 
+[![Exemple Podcast](https://img.youtube.com/vi/DOa3Y7VU0A4/0.jpg)](https://youtu.be/DOa3Y7VU0A4)
 
 
 ## Models

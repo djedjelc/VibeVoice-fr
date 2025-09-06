@@ -157,7 +157,7 @@ class VibeVoiceDemo:
         }
         
         if not self.available_voices:
-            raise gr.Error("No voice presets found. Please add .wav files to the demo/voices directory.")
+            raise gr.Error("Aucune voix prédéfinie trouvée. Veuillez ajouter des fichiers .wav dans le dossier demo/voices.")
         
         print(f"Found {len(self.available_voices)} voice files in {voices_dir}")
         print(f"Available voices: {', '.join(self.available_voices.keys())}")
@@ -192,14 +192,14 @@ class VibeVoiceDemo:
             # Validate inputs
             if not script.strip():
                 self.is_generating = False
-                raise gr.Error("Error: Please provide a script.")
+                raise gr.Error("Erreur: Veuillez fournir un script.")
 
             # Defend against common mistake
             script = script.replace("’", "'")
             
             if num_speakers < 1 or num_speakers > 4:
                 self.is_generating = False
-                raise gr.Error("Error: Number of speakers must be between 1 and 4.")
+                raise gr.Error("Erreur: Le nombre d'interlocuteurs doit être entre 1 et 4.")
             
             # Collect selected speakers
             selected_speakers = [speaker_1, speaker_2, speaker_3, speaker_4][:num_speakers]
@@ -210,11 +210,11 @@ class VibeVoiceDemo:
                     # Expecting ("custom", np.ndarray)
                     if speaker[0] != "custom" or not isinstance(speaker[1], np.ndarray):
                         self.is_generating = False
-                        raise gr.Error(f"Error: Speaker {i+1} audio invalide.")
+                        raise gr.Error(f"Erreur: Audio de l'interlocuteur {i+1} invalide.")
                 else:
-                    if not speaker or speaker not in self.available_voices:
-                        self.is_generating = False
-                        raise gr.Error(f"Error: Please select a valid speaker for Speaker {i+1}.")
+                if not speaker or speaker not in self.available_voices:
+                    self.is_generating = False
+                        raise gr.Error(f"Erreur: Veuillez sélectionner un interlocuteur valide pour l'interlocuteur {i+1}.")
             
             # Build initial log
             log = f"🎙️ Génération de podcast avec {num_speakers} interlocuteurs\n"
@@ -244,13 +244,13 @@ class VibeVoiceDemo:
                     audio_data = speaker_item[1]
                     if len(audio_data) == 0:
                         self.is_generating = False
-                        raise gr.Error("Error: Custom audio sample is empty")
+                        raise gr.Error("Erreur: L'échantillon audio personnalisé est vide")
                 else:
                     audio_path = self.available_voices[speaker_item]
-                    audio_data = self.read_audio(audio_path)
-                    if len(audio_data) == 0:
-                        self.is_generating = False
-                        raise gr.Error(f"Error: Failed to load audio for {speaker_item}")
+                audio_data = self.read_audio(audio_path)
+                if len(audio_data) == 0:
+                    self.is_generating = False
+                        raise gr.Error(f"Erreur: Échec du chargement audio pour {speaker_item}")
                 voice_samples.append(audio_data)
             
             # log += f"✅ Loaded {len(voice_samples)} voice samples\n"
@@ -896,7 +896,7 @@ def create_demo_interface(demo_instance: VibeVoiceDemo):
                         inputs=[dd],
                         outputs=[speaker_uploads[idx]],
                         queue=False
-                    )
+                )
                 
                 # Advanced settings
                 gr.Markdown("### ⚙️ **Paramètres avancés**")
@@ -1024,7 +1024,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
                 dropdown_updates.append(gr.update(visible=(i < num_speakers)))
                 upload_updates.append(gr.update(visible=False))  # hide uploads initially, they toggle separately
             return dropdown_updates + upload_updates
-
+        
         num_speakers.change(
             fn=update_speaker_visibility,
             inputs=[num_speakers],
@@ -1062,7 +1062,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
 
                 # Clear outputs at start
                 yield None, gr.update(value=None, visible=False), "🎙️ Démarrage de la génération...", gr.update(visible=True), gr.update(visible=False), gr.update(visible=True)
-
+                
                 for streaming_audio, complete_audio, log, streaming_visible in demo_instance.generate_podcast_streaming(
                     num_speakers=int(num_speakers),
                     script=script,
@@ -1075,7 +1075,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
                     if complete_audio is not None:
                         yield None, gr.update(value=complete_audio, visible=True), log, gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
                     else:
-                        yield streaming_audio, gr.update(visible=False), log, streaming_visible, gr.update(visible=False), gr.update(visible=True)
+                            yield streaming_audio, gr.update(visible=False), log, streaming_visible, gr.update(visible=False), gr.update(visible=True)
 
             except Exception as e:
                 error_msg = f"❌ Une erreur est survenue: {str(e)}"
@@ -1136,7 +1136,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
             else:
                 # Fallback to default
                 example_scripts = [
-                    [2, "Speaker 0: Welcome to our AI podcast demonstration!\nSpeaker 1: Thanks for having me. This is exciting!"]
+                    [2, "Speaker 0: Bienvenue dans notre démo de podcast IA !\nSpeaker 1: Merci de m'inviter. C'est passionnant !"]
                 ]
             
             # Randomly select one
@@ -1179,7 +1179,7 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
         else:
             # Fallback to a simple default example if no scripts loaded
             example_scripts = [
-                [1, "Speaker 1: Welcome to our AI podcast demonstration! This is a sample script showing how VibeVoice can generate natural-sounding speech."]
+                [1, "Speaker 1: Bienvenue dans notre démo de podcast IA ! Ceci est un script d'exemple montrant comment VibeVoice peut générer une parole naturelle."]
             ]
         
         gr.Examples(
@@ -1188,15 +1188,18 @@ Ou collez simplement votre texte : les locuteurs seront affectés automatiquemen
             label="Essayez ces scripts d'exemple :"
         )
 
-        # --- Risks & limitations (footer) ---
+        # --- Risques et limitations (pied de page) ---
         gr.Markdown(
             """
-## Risks and limitations
+## Risques et limitations
 
-While efforts have been made to optimize it through various techniques, it may still produce outputs that are unexpected, biased, or inaccurate. VibeVoice inherits any biases, errors, or omissions produced by its base model (specifically, Qwen2.5 1.5b in this release).
-Potential for Deepfakes and Disinformation: High-quality synthetic speech can be misused to create convincing fake audio content for impersonation, fraud, or spreading disinformation. Users must ensure transcripts are reliable, check content accuracy, and avoid using generated content in misleading ways. Users are expected to use the generated content and to deploy the models in a lawful manner, in full compliance with all applicable laws and regulations in the relevant jurisdictions. It is best practice to disclose the use of AI when sharing AI-generated content.
+Bien que des efforts aient été faits pour l'optimiser à travers diverses techniques, il peut encore produire des sorties inattendues, biaisées ou inexactes. VibeVoice hérite de tous les biais, erreurs ou omissions produits par son modèle de base (spécifiquement, Qwen2.5 1.5b dans cette version).
+
+**Potentiel pour les deepfakes et la désinformation** : La synthèse vocale de haute qualité peut être utilisée à mauvais escient pour créer du contenu audio faux convaincant à des fins d'usurpation d'identité, de fraude ou de diffusion de désinformation. Les utilisateurs doivent s'assurer que les transcriptions sont fiables, vérifier l'exactitude du contenu et éviter d'utiliser le contenu généré de manière trompeuse. 
+
+Les utilisateurs sont tenus d'utiliser le contenu généré et de déployer les modèles de manière légale, en pleine conformité avec toutes les lois et réglementations applicables dans les juridictions pertinentes. Il est recommandé de divulguer l'utilisation de l'IA lors du partage de contenu généré par IA.
             """,
-            elem_classes="generation-card",  # 可选：复用卡片样式
+            elem_classes="generation-card",
         )
     return interface
 
